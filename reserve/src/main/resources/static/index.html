@@ -1,177 +1,283 @@
 <!DOCTYPE html>
-<html lang="ko">
+<html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <title>예약 시스템 간이 프론트엔드</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>統合予約管理システム (Reservation System)</title>
     <style>
-        body { font-family: Arial, sans-serif; margin: 20px; }
-        .card { border: 1px solid #ccc; padding: 15px; margin-bottom: 20px; border-radius: 5px; }
-        h3 { margin-top: 0; }
-        input, button { padding: 8px; margin: 5px 0; }
-        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
-        th { background-color: #f2f2f2; }
-        .cancel-btn { background-color: #ff4d4f; color: white; border: none; border-radius: 3px; cursor: pointer; padding: 5px 10px; }
-        .cancel-btn:hover { background-color: #d9363e; }
-        .canceled-text { color: #8c8c8c; text-decoration: line-through; }
+        * { box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 0; }
+        body { background-color: #f4f7f6; color: #333; line-height: 1.6; }
+
+        /* 上部ナビゲーションバー (상단 배너 메뉴) */
+        header { background-color: #2c3e50; color: white; padding: 1rem 2rem; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        header h1 { font-size: 1.4rem; }
+        nav button { background: none; border: none; color: #ecf0f1; padding: 0.6rem 1.2rem; font-size: 0.95rem; cursor: pointer; border-radius: 4px; transition: 0.3s; margin-left: 0.5rem; }
+        nav button:hover, nav button.active { background-color: #34495e; color: #3498db; font-weight: bold; }
+
+        /* メインコンテナ (메인 컨테이너) */
+        .container { max-width: 1000px; margin: 2rem auto; padding: 0 1rem; }
+        .section { display: none; background: white; padding: 2rem; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
+        .section.active { display: block; }
+
+        h2 { margin-bottom: 1.5rem; color: #2c3e50; border-bottom: 2px solid #3498db; padding-bottom: 0.5rem; }
+
+        /* フォームスタイル (폼 스타일) */
+        .form-group { margin-bottom: 1.2rem; }
+        .form-group label { display: block; margin-bottom: 0.5rem; font-weight: 600; }
+        .form-group input, .form-group select { width: 100%; padding: 0.7rem; border: 1px solid #ccc; border-radius: 4px; font-size: 1rem; }
+        .btn-submit { background-color: #3498db; color: white; border: none; padding: 0.8rem 1.5rem; font-size: 1rem; border-radius: 4px; cursor: pointer; width: 100%; font-weight: bold; }
+        .btn-submit:hover { background-color: #2980b9; }
+
+        /* テーブルスタイル (테이블 스타일) */
+        table { width: 100%; border-collapse: collapse; margin-top: 1.5rem; }
+        th, td { padding: 0.8rem; text-align: left; border-bottom: 1px solid #ddd; }
+        th { background-color: #f8f9fa; color: #2c3e50; }
+        .cancel-btn { background-color: #e74c3c; color: white; border: none; padding: 0.4rem 0.8rem; border-radius: 4px; cursor: pointer; font-size: 0.85rem; }
+        .cancel-btn:hover { background-color: #c0392b; }
+        .canceled-text { color: #95a5a6; text-decoration: line-through; }
     </style>
 </head>
 <body>
 
-    <h2>📅 예약 관리 시스템</h2>
+    <!-- 上部ナビゲーションバー -->
+    <header>
+        <h1>🗓️ 統合予約管理システム</h1>
+        <nav>
+            <button class="active" onclick="showSection('user-sec', this)">ユーザー管理</button>
+            <button onclick="showSection('item-sec', this)">商品・サービス管理</button>
+            <button onclick="showSection('reserve-sec', this)">新規予約</button>
+            <button onclick="showSection('status-sec', this)">予約状況一覧</button>
+        </nav>
+    </header>
 
-    <!-- 1. 유저 등록 -->
-    <div class="card">
-        <h3>1. 사용자 등록</h3>
-        <input type="text" id="userName" placeholder="이름 (예: 홍길동)"><br>
-        <button onclick="createUser()">유저 등록</button>
-        <span id="userResult"></span>
-    </div>
+    <div class="container">
+        <!-- 1. ユーザー管理セクション -->
+        <div id="user-sec" class="section active">
+            <h2>👤 新規ユーザー登録</h2>
+            <form onsubmit="registerUser(event)">
+                <div class="form-group">
+                    <label>お名前 (Name)</label>
+                    <input type="text" id="userName" placeholder="例: 山田太郎" required>
+                </div>
+                <div class="form-group">
+                    <label>メールアドレス (Email)</label>
+                    <input type="email" id="userEmail" placeholder="例: user@example.com" required>
+                </div>
+                <button type="submit" class="btn-submit">ユーザーを登録する</button>
+            </form>
 
-    <!-- 2. 아이템 등록 -->
-    <div class="card">
-        <h3>2. 예약 대상(아이템) 등록</h3>
-        <input type="text" id="itemName" placeholder="아이템명 (예: 회의실A)"><br>
-        <button onclick="createItem()">아이템 등록</button>
-        <span id="itemResult"></span>
-    </div>
+            <h2 style="margin-top: 3rem;">📋 登録済みユーザー一覧</h2>
+            <table>
+                <thead>
+                    <tr><th>ID</th><th>お名前</th><th>メールアドレス</th></tr>
+                </thead>
+                <tbody id="userTable"></tbody>
+            </table>
+        </div>
 
-    <!-- 3. 예약 신청 -->
-    <div class="card">
-        <h3>3. 예약 신청</h3>
-        <input type="number" id="userId" placeholder="유저 ID (예: 1)"><br>
-        <input type="number" id="itemId" placeholder="아이템 ID (예: 1)"><br>
-        <input type="datetime-local" id="reserveDateTime"><br>
-        <button onclick="createReservation()">예약하기</button>
-        <span id="reserveResult"></span>
-    </div>
+        <!-- 2. 商品管理セクション -->
+        <div id="item-sec" class="section">
+            <h2>📦 新規商品・サービス登録</h2>
+            <form onsubmit="registerItem(event)">
+                <div class="form-group">
+                    <label>商品・サービス名</label>
+                    <input type="text" id="itemName" placeholder="例: 会議室A 予約" required>
+                </div>
+                <div class="form-group">
+                    <label>価格 (円)</label>
+                    <input type="number" id="itemPrice" placeholder="例: 30000" required>
+                </div>
+                <button type="submit" class="btn-submit">商品を登録する</button>
+            </form>
 
-    <!-- 4. 전체 예약 목록 & 취소 -->
-    <div class="card">
-        <h3>4. 전체 예약 현황</h3>
-        <button onclick="loadReservations()">목록 새로고침</button>
-        <table>
-            <thead>
-                <tr>
-                    <th>예약 ID</th>
-                    <th>유저 ID</th>
-                    <th>아이템 ID</th>
-                    <th>예약 일시</th>
-                    <th>상태</th>
-                    <th>작업</th>
-                </tr>
-            </thead>
-            <tbody id="reservationTable"></tbody>
-        </table>
+            <h2 style="margin-top: 3rem;">📋 登録済み商品一覧</h2>
+            <table>
+                <thead>
+                    <tr><th>ID</th><th>商品・サービス名</th><th>価格</th></tr>
+                </thead>
+                <tbody id="itemTable"></tbody>
+            </table>
+        </div>
+
+        <!-- 3. 予約登録セクション -->
+        <div id="reserve-sec" class="section">
+            <h2>📅 新規予約申込み</h2>
+            <form onsubmit="createReservation(event)">
+                <div class="form-group">
+                    <label>ユーザー ID</label>
+                    <input type="number" id="resUserId" placeholder="ユーザーIDを入力してください" required>
+                </div>
+                <div class="form-group">
+                    <label>商品 ID</label>
+                    <input type="number" id="resItemId" placeholder="商品IDを入力してください" required>
+                </div>
+                <div class="form-group">
+                    <label>予約日時</label>
+                    <input type="datetime-local" id="resDateTime" required>
+                </div>
+                <button type="submit" class="btn-submit">予約を確定する</button>
+            </form>
+        </div>
+
+        <!-- 4. 全体状況セクション -->
+        <div id="status-sec" class="section">
+            <h2>📋 予約状況一覧</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>予約ID</th>
+                        <th>ユーザーID</th>
+                        <th>商品ID</th>
+                        <th>予約日時</th>
+                        <th>ステータス</th>
+                        <th>操作</th>
+                    </tr>
+                </thead>
+                <tbody id="reservationTable"></tbody>
+            </table>
+        </div>
     </div>
 
     <script>
-        const API_BASE = "http://localhost:8081/api";
+        const API_BASE = 'http://localhost:8081/api';
 
-        // 유저 등록
-        async function createUser() {
-            const name = document.getElementById("userName").value;
-            if (!name) return alert("이름을 입력하세요.");
+        // タブ切り替え関数
+        function showSection(sectionId, btn) {
+            document.querySelectorAll('.section').forEach(sec => sec.classList.remove('active'));
+            document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
             
-            const res = await fetch(`${API_BASE}/users`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ name })
-            });
-            const data = await res.json();
-            document.getElementById("userResult").innerText = ` 등록 완료! (생성된 ID: ${data})`;
+            document.getElementById(sectionId).classList.add('active');
+            btn.classList.add('active');
+
+            if(sectionId === 'user-sec') loadUsers();
+            if(sectionId === 'item-sec') loadItems();
+            if(sectionId === 'status-sec') loadReservations();
         }
 
-        // 아이템 등록
-        async function createItem() {
-            const name = document.getElementById("itemName").value;
-            if (!name) return alert("아이템명을 입력하세요.");
+        // --- 1. ユーザーロジック ---
+        async function registerUser(e) {
+            e.preventDefault();
+            const name = document.getElementById('userName').value;
+            const email = document.getElementById('userEmail').value;
+
+            const res = await fetch(`${API_BASE}/users`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name, email })
+            });
+
+            if (res.ok) {
+                alert('ユーザーが正常に登録されました。');
+                document.getElementById('userName').value = '';
+                document.getElementById('userEmail').value = '';
+                loadUsers();
+            } else {
+                alert('ユーザー登録に失敗しました。');
+            }
+        }
+
+        async function loadUsers() {
+            try {
+                const res = await fetch(`${API_BASE}/users`);
+                const data = await res.json();
+                const tbody = document.getElementById('userTable');
+                tbody.innerHTML = data.map(u => `<tr><td>${u.id}</td><td>${u.name}</td><td>${u.email}</td></tr>`).join('');
+            } catch(e) { console.error(e); }
+        }
+
+        // --- 2. 商品ロジック ---
+        async function registerItem(e) {
+            e.preventDefault();
+            const name = document.getElementById('itemName').value;
+            const price = document.getElementById('itemPrice').value;
 
             const res = await fetch(`${API_BASE}/items`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ name })
-            });
-            const data = await res.json();
-            document.getElementById("itemResult").innerText = ` 등록 완료! (생성된 ID: ${data})`;
-        }
-
-        // 예약 등록
-        async function createReservation() {
-            const userId = document.getElementById("userId").value;
-            const itemId = document.getElementById("itemId").value;
-            const reserveDateTime = document.getElementById("reserveDateTime").value;
-
-            if (!userId || !itemId || !reserveDateTime) {
-                return alert("모든 필수 항목을 입력하세요.");
-            }
-
-            const res = await fetch(`${API_BASE}/reservations`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    userId: parseInt(userId),
-                    itemId: parseInt(itemId),
-                    reserveDateTime: reserveDateTime
-                })
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name, price })
             });
 
             if (res.ok) {
+                alert('商品が正常に登録されました。');
+                document.getElementById('itemName').value = '';
+                document.getElementById('itemPrice').value = '';
+                loadItems();
+            } else {
+                alert('商品登録に失敗しました。');
+            }
+        }
+
+        async function loadItems() {
+            try {
+                const res = await fetch(`${API_BASE}/items`);
                 const data = await res.json();
-                document.getElementById("reserveResult").innerText = ` 예약 성공! (예약 번호: ${data})`;
-                loadReservations();
-            } else {
-                document.getElementById("reserveResult").innerText = "❌ 예약 실패 (중복 예약 또는 입력 오류)";
-            }
+                const tbody = document.getElementById('itemTable');
+                tbody.innerHTML = data.map(i => `<tr><td>${i.id}</td><td>${i.name}</td><td>${Number(i.price).toLocaleString()}円</td></tr>`).join('');
+            } catch(e) { console.error(e); }
         }
 
-        // 예약 목록 조회
-        async function loadReservations() {
-            const res = await fetch(`${API_BASE}/reservations`);
-            const data = await res.json();
-            
-            const tbody = document.getElementById("reservationTable");
-            tbody.innerHTML = "";
+        // --- 3. 予約ロジック ---
+        async function createReservation(e) {
+            e.preventDefault();
+            const userId = document.getElementById('resUserId').value;
+            const itemId = document.getElementById('resItemId').value;
+            const reserveDateTime = document.getElementById('resDateTime').value;
 
-            data.forEach(r => {
-                const isCanceled = r.status === 'CANCELED';
-                const statusText = isCanceled ? `<span class="canceled-text">취소됨</span>` : r.status;
-                const actionButton = isCanceled 
-                    ? '-' 
-                    : `<button class="cancel-btn" onclick="cancelReservation(${r.id})">예약 취소</button>`;
-
-                const row = `<tr>
-                    <td>${r.id}</td>
-                    <td>${r.user ? r.user.id : '-'}</td>
-                    <td>${r.item ? r.item.id : '-'}</td>
-                    <td>${r.reserveDateTime}</td>
-                    <td>${statusText}</td>
-                    <td>${actionButton}</td>
-                </tr>`;
-                tbody.innerHTML += row;
-            });
-        }
-
-        // ⬇️ 예약 취소 API 호출 함수 추가
-        async function cancelReservation(reservationId) {
-            if (!confirm(`예약 ID ${reservationId}번을 정말 취소하시겠습니까?`)) {
-                return;
-            }
-
-            const res = await fetch(`${API_BASE}/reservations/${reservationId}/cancel`, {
-                method: "PATCH"
+            const res = await fetch(`${API_BASE}/reservations?userId=${userId}&itemId=${itemId}&reserveDateTime=${reserveDateTime}`, {
+                method: 'POST'
             });
 
             if (res.ok) {
-                alert("예약이 정상적으로 취소되었습니다.");
-                loadReservations(); // 목록 새로고침
+                alert('予約が正常に完了しました。');
+                document.getElementById('resUserId').value = '';
+                document.getElementById('resItemId').value = '';
+                document.getElementById('resDateTime').value = '';
             } else {
-                alert("예약 취소에 실패했습니다.");
+                alert('予約に失敗しました。(ユーザーIDまたは商品IDをご確認ください)');
             }
         }
 
-        // 페이지 로드 시 예약 목록 불러오기
-        loadReservations();
+        // --- 4. 全体状況ロジック ---
+        async function loadReservations() {
+            try {
+                const res = await fetch(`${API_BASE}/reservations`);
+                const data = await res.json();
+                const tbody = document.getElementById('reservationTable');
+                tbody.innerHTML = '';
+
+                if (!data || data.length === 0) {
+                    tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;">登録されている予約はありません。</td></tr>`;
+                    return;
+                }
+
+                data.forEach(r => {
+                    const isCanceled = r.status === 'CANCELED';
+                    const statusText = isCanceled ? `<span class="canceled-text">キャンセル済み</span>` : (r.status === 'CONFIRMED' ? '確定' : r.status || '-');
+                    const actionButton = isCanceled ? '-' : `<button class="cancel-btn" onclick="cancelReservation(${r.id})">キャンセル</button>`;
+
+                    tbody.innerHTML += `<tr>
+                        <td>${r.id}</td>
+                        <td>${r.user ? r.user.id : '-'}</td>
+                        <td>${r.item ? r.item.id : '-'}</td>
+                        <td>${r.reserveDateTime || '-'}</td>
+                        <td>${statusText}</td>
+                        <td>${actionButton}</td>
+                    </tr>`;
+                });
+            } catch (e) { console.error(e); }
+        }
+
+        async function cancelReservation(id) {
+            if (!confirm('本当にこの予約をキャンセルしますか？')) return;
+            const res = await fetch(`${API_BASE}/reservations/${id}/cancel`, { method: 'PATCH' });
+            if (res.ok) {
+                alert('予約がキャンセルされました。');
+                loadReservations();
+            }
+        }
+
+        // 初期表示時ユーザー一覧読み込み
+        loadUsers();
     </script>
 </body>
 </html>
